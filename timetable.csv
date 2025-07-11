@@ -1,0 +1,67 @@
+時刻,内容,人数,memo
+8:45,スタッフ集合,1,
+9:10,選手集合/受付/測定,1,
+10:00,選手ミーティング/リハーサル,1,
+10:30,開場/Open/ジャッジミーティング,1,
+11:10,アタックPV/開会宣言/会長挨拶/ジャッジ紹介,1,
+11:25,スタート/Start,1,Natural
+11:25,MEN'S PHYSIQUE - Junior (18 to 23 yr),4,Natural
+11:28,WOMEN'S FIT MODEL - Novice,1,Natural
+11:29,WOMEN'S FIT MODEL - Masters 40+ (40 yr & over),1,Natural
+11:30,WOMEN'S BIKINI - True Novice,3,Natural
+11:33,MEN'S PHYSIQUE - True Novice A (up to 172 cm),16,Natural
+11:45,MEN'S PHYSIQUE - True Novice B (172 cm & over),20,Natural
+12:01,WOMEN'S BIKINI - Local,2,Natural
+12:02,MEN'S PHYSIQUE - Local,7,Natural
+12:08,WOMEN'S BIKINI - Novice,6,Natural
+12:13,MEN'S PHYSIQUE - Novice A (up to 168 cm),13,Natural
+12:23,MEN'S PHYSIQUE - Novice B (168 cm up to 172 cm),19,Natural
+12:38,MEN'S PHYSIQUE - Novice C (172 cm up to 175 cm),12,Natural
+12:48,MEN'S PHYSIQUE - Novice D (175 cm & over),15,Natural
+12:59,休憩/Break,1,Natural
+13:15,WOMEN'S FIT MODEL - Open,1,Natural
+13:16,MEN'S CLASSIC PHYSIQUE - Novice,4,Natural
+13:24,"MEN'S CLASSIC PHYSIQUE - Open Class (over 165.1 cm up to & incl 167.6 cm, up to & incl 80.3 kg)",1,Natural
+13:26,"MEN'S CLASSIC PHYSIQUE - Open Class (over 167.6 cm up to & incl 170.2 cm, up to & incl 82.6 kg)",1,Natural
+13:29,"MEN'S CLASSIC PHYSIQUE - Open Class (over 175.3 cm up to & incl 177.8 cm, up to & incl 91.6 kg)",1,Natural
+13:31,WOMEN'S FIGURE - Open,1,Natural
+13:32,WOMEN'S PHYSIQUE - Open,1,Natural
+13:34,MEN'S BODYBUILDING - Novice,1,Natural
+13:37,MEN'S BODYBUILDING - Open,1,Natural
+13:39,WOMEN'S BIKINI - Open,8,Natural
+13:46,MEN'S PHYSIQUE - Open Class A (up to 170 cm),10,Natural
+13:54,MEN'S PHYSIQUE - Open Class B (170 cm up to 175 cm),18,Natural
+14:08,MEN'S PHYSIQUE - Open Class C (175 cm & over),14,Natural
+14:19,小休憩/Break 表彰準備,1,Natural
+14:45,表彰,26,Natural
+15:24,オーバーオール,5,Natural
+15:36,閉会/Close,1,Natural
+15:55,スタート/Start,1,Open
+15:55,MEN'S PHYSIQUE - Junior (18 to 23 yr),1,Open
+15:55,WOMEN'S FIT MODEL - Beginner,1,Open
+15:56,WOMEN'S FIT MODEL - Novice,1,Open
+15:58,WOMEN'S BIKINI - True Novice,3,Open
+16:00,MEN'S PHYSIQUE - True Novice,13,Open
+16:10,MEN'S PHYSIQUE - Local,3,Open
+16:13,WOMEN'S BIKINI - Novice,3,Open
+16:16,MEN'S PHYSIQUE - Novice A (up to 168 cm),5,Open
+16:20,MEN'S PHYSIQUE - Novice B (168 cm up to 172 cm),1,Open
+16:21,MEN'S PHYSIQUE - Novice C (172 cm up to 175 cm),1,Open
+16:22,MEN'S PHYSIQUE - Novice D (175 cm & over),6,Open
+16:26,WOMEN'S BIKINI - Masters 40+ (40 yr & over),5,Open
+16:31,MEN'S PHYSIQUE - Masters 40+ (40 yr & over),11,Open
+16:39,WOMEN'S FIT MODEL - Open,1,Open
+16:40,MEN'S CLASSIC PHYSIQUE - Novice,2,Open
+16:45,MEN'S CLASSIC PHYSIQUE - Open,3,Open
+16:51,WOMEN'S FIGURE - Open,3,Open
+16:54,WOMEN'S PHYSIQUE - Open,1,Open
+16:57,MEN'S BODYBUILDING - Open,2,Open
+17:01,WOMEN'S BIKINI - Open,9,Open
+17:09,MEN'S PHYSIQUE - Open Class A (up to 170 cm),4,Open
+17:13,MEN'S PHYSIQUE - Open Class B (170 cm up to 175 cm),5,Open
+17:17,MEN'S PHYSIQUE - Open Class C (175 cm & over),10,Open
+17:24,小休憩/Break 表彰準備,1,Open
+17:50,表彰,23,Open
+18:24,オーバーオール,2,Open
+18:29,閉会/Close,1,Open
+19:19,完全撤収,1,

@@ -1,0 +1,846 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.csv-upload, .post-form, .posts-history {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.post-form h2, .posts-history h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+}
+
+.btn-twitter {
+    background: #1da1f2;
+    color: white;
+    font-size: 14px;
+    padding: 8px 16px;
+}
+
+.btn-twitter:hover {
+    background: #1991db;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    font-size: 14px;
+    padding: 8px 16px;
+    margin-right: 10px;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-save {
+    background: #28a745;
+    color: white;
+    font-size: 14px;
+    padding: 8px 16px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-save:hover {
+    background: #218838;
+}
+
+.contest-name-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.contest-name-container input {
+    flex: 1;
+    margin: 0;
+}
+
+.saved-contests {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.saved-contest-item {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.saved-contest-item:hover {
+    background: #e9ecef;
+    transform: translateY(-1px);
+}
+
+.saved-contest-item .contest-name {
+    cursor: pointer;
+    color: #667eea;
+    font-weight: 500;
+    margin-right: 8px;
+}
+
+.saved-contest-item .contest-name:hover {
+    text-decoration: underline;
+}
+
+.saved-contest-item .delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+.saved-contest-item .delete-btn:hover {
+    background: #c82333;
+}
+
+/* 認証セクションのスタイル */
+.auth-section {
+    margin-bottom: 20px;
+}
+
+.auth-status {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.auth-success {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-icon {
+    font-size: 1.2em;
+}
+
+.user-text {
+    color: #28a745;
+    font-size: 1.1em;
+}
+
+.auth-needed {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.auth-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.auth-icon {
+    font-size: 1.2em;
+}
+
+.btn-auth {
+    background: #1da1f2;
+    color: white;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-auth:hover {
+    background: #1991db;
+    transform: translateY(-2px);
+}
+
+.btn-logout {
+    background: #6c757d;
+    color: white;
+    font-size: 14px;
+    padding: 8px 16px;
+}
+
+.btn-logout:hover {
+    background: #5a6268;
+}
+
+.auth-error {
+    color: #dc3545;
+    text-align: center;
+    padding: 20px;
+}
+
+.post-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease;
+}
+
+.post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.post-header h3 {
+    color: #667eea;
+    font-size: 1.3em;
+}
+
+.post-time {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.post-content p {
+    margin-bottom: 8px;
+}
+
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.status-開始 {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-進行中 {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-終了 {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-延期 {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-中止 {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.post-actions {
+    margin-top: 15px;
+    text-align: right;
+}
+
+.posted-badge {
+    color: #28a745;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.no-posts {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px;
+}
+
+/* CSV Upload Styles */
+.csv-upload h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+}
+
+.csv-upload-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.help-text {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.file-input {
+    padding: 10px;
+    border: 2px dashed #ddd;
+    border-radius: 5px;
+    background-color: #fafafa;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.file-input:hover {
+    border-color: #667eea;
+}
+
+.csv-status {
+    margin-top: 10px;
+}
+
+.status-info {
+    color: #666;
+    font-style: italic;
+}
+
+.status-success {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-error {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.status-loading {
+    color: #007bff;
+    font-style: italic;
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    color: white;
+    font-weight: 600;
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: #28a745;
+}
+
+.notification.error {
+    background: #dc3545;
+}
+
+.notification.info {
+    background: #17a2b8;
+}
+
+/* モーダル関連のスタイル */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8);
+    transition: transform 0.3s ease;
+}
+
+.modal.show .modal-content {
+    transform: scale(1);
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+    color: #667eea;
+}
+
+.tweet-edit-container {
+    margin-bottom: 20px;
+}
+
+.tweet-edit-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    line-height: 1.4;
+    resize: vertical;
+    font-family: inherit;
+    margin-bottom: 10px;
+}
+
+.tweet-edit-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.char-count-edit {
+    text-align: right;
+    font-size: 14px;
+    margin: 0;
+}
+
+.char-count-edit.within-limit {
+    color: #28a745;
+}
+
+.char-count-edit.over-limit {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Reply Info Styles */
+.reply-info {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.reply-info h4 {
+    margin-bottom: 10px;
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+.reply-post {
+    background-color: white;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 10px;
+}
+
+.reply-tweet-text {
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 4px;
+    font-style: italic;
+    margin: 8px 0;
+    white-space: pre-wrap;
+}
+
+.reply-time {
+    font-size: 0.9em;
+    color: #666;
+    margin: 0;
+}
+
+.reply-note {
+    color: #28a745;
+    font-weight: bold;
+    margin: 0;
+    text-align: center;
+}
+
+.new-post-note {
+    color: #17a2b8;
+    font-weight: bold;
+    text-align: center;
+    margin: 0;
+}
+
+/* Media Upload Styles */
+.media-upload-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+.media-upload-container h4 {
+    margin-bottom: 15px;
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+.media-file-input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.media-file-input:hover {
+    border-color: #667eea;
+}
+
+.media-upload-info {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.media-upload-info p {
+    margin: 5px 0;
+}
+
+.media-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.media-preview-item {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: white;
+}
+
+.media-preview-item img,
+.media-preview-item video {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+}
+
+.media-file-info {
+    padding: 8px;
+    font-size: 0.8em;
+    background-color: #f8f9fa;
+    color: #666;
+    text-align: center;
+    word-break: break-word;
+}
+
+.tweet-preview-text {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #1da1f2;
+    margin-bottom: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.4;
+    white-space: pre-wrap;
+}
+
+.char-count {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.char-count.within-limit {
+    color: #28a745;
+}
+
+.char-count.over-limit {
+    color: #dc3545;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.tweet-preview {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border-left: 4px solid #1da1f2;
+}
+
+.tweet-text {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    margin-top: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    header {
+        padding: 20px 15px;
+        margin-bottom: 20px;
+    }
+    
+    header h1 {
+        font-size: 2em;
+    }
+    
+    .post-form, .posts-history {
+        padding: 20px;
+        border-radius: 10px;
+    }
+    
+    .contest-name-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .contest-name-container input {
+        margin-bottom: 0;
+    }
+    
+    .btn-save {
+        margin-left: 0;
+        align-self: flex-end;
+        width: auto;
+    }
+    
+    .saved-contests {
+        margin-top: 10px;
+    }
+    
+    .saved-contest-item {
+        font-size: 13px;
+        padding: 4px 8px;
+    }
+    
+    .post-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .post-header h3 {
+        margin-bottom: 0;
+        font-size: 1.1em;
+    }
+    
+    .post-time {
+        font-size: 0.85em;
+    }
+    
+    .post-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .post-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+    }
+    
+    .btn-secondary {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header {
+        padding: 15px 10px;
+    }
+    
+    header h1 {
+        font-size: 1.8em;
+    }
+    
+    .post-form, .posts-history {
+        padding: 15px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    .notification {
+        right: 10px;
+        left: 10px;
+        top: 10px;
+        transform: translateY(-100%);
+    }
+    
+    .notification.show {
+        transform: translateY(0);
+    }
+}
