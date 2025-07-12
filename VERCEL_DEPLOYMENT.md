@@ -1,12 +1,13 @@
-# Vercel デプロイメントガイド
+# Vercel + Supabase デプロイメントガイド
 
-このアプリケーションをVercelでデプロイする手順です。
+このアプリケーションをVercel（フロントエンド・バックエンド）とSupabase（データベース）でデプロイする手順です。
 
 ## 必要な準備
 
 1. **GitHub アカウント**
 2. **Vercel アカウント**
-3. **Twitter Developer アカウント**（API キー取得済み）
+3. **Supabase アカウント**
+4. **Twitter Developer アカウント**（API キー取得済み）
 
 ## デプロイ手順
 
@@ -32,12 +33,15 @@ git push -u origin main
    - Output Directory: `public`（設定不要）
    - Install Command: `npm install`（自動設定）
 
-### 3. PostgreSQL データベースを追加
+### 3. Supabase データベースを設定
 
-1. Vercel Dashboardでプロジェクトを選択
-2. "Storage" タブをクリック
-3. "Create Database" → "Postgres" を選択
-4. データベース名を入力して作成
+1. [Supabase](https://supabase.com/) にアクセスしてアカウント作成
+2. "New project" でプロジェクトを作成
+3. プロジェクトのダッシュボードで "Settings" → "API" を開く
+4. 以下の情報をメモ：
+   - Project URL
+   - anon public key
+5. "SQL Editor" を開き、`supabase-schema.sql` の内容を実行してテーブルを作成
 
 ### 4. 環境変数を設定
 
@@ -48,21 +52,22 @@ TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
 TWITTER_ACCESS_TOKEN=your_access_token
 TWITTER_ACCESS_TOKEN_SECRET=your_access_token_secret
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 TEST_MODE=false
 ```
 
-**重要**: PostgreSQL関連の環境変数は、データベースを追加すると自動的に設定されます。
+**重要**: Supabase のURLとキーは、Supabaseプロジェクトの Settings → API から取得してください。
 
 ### 5. データベースの初期化
 
-デプロイ後、最初のアクセス時にデータベーステーブルが自動的に作成されます。
+Supabase SQL Editorで `supabase-schema.sql` の内容を実行することで、必要なテーブルが作成されます。
 
-### 6. 手動でデータベースを初期化する場合
+### 6. デプロイメントの確認
 
-Vercel Dashboardで：
-
-1. "Storage" → PostgreSQLデータベースを選択
-2. "Query" タブで `schema.sql` の内容を実行
+1. Vercelでデプロイが完了したら、提供されたURLにアクセス
+2. アプリケーションが正常に動作するか確認
+3. Twitter API認証が正常に表示されるか確認
 
 ## アプリケーションの使用方法
 
@@ -75,8 +80,9 @@ Vercel Dashboardで：
 ## トラブルシューティング
 
 ### データベース接続エラー
-- Vercel DashboardでPostgreSQL環境変数が正しく設定されているか確認
-- データベースが作成されているか確認
+- Vercel DashboardでSupabase環境変数（SUPABASE_URL, SUPABASE_ANON_KEY）が正しく設定されているか確認
+- Supabaseプロジェクトが作成され、テーブルが正しく作成されているか確認
+- Supabase SQL Editorで `supabase-schema.sql` が正常に実行されたか確認
 
 ### Twitter API エラー
 - Twitter Developer Portalでアプリの権限が "Read and Write" になっているか確認
@@ -91,8 +97,9 @@ Vercel Dashboardで：
 
 1. **TEST_MODE**: 本番では `false` に設定
 2. **ファイルストレージ**: Vercelはサーバーレスのため、アップロードしたファイルは一時的です
-3. **セッション**: データベースベースなので、セッション情報は永続化されません
-4. **スケーリング**: Vercelが自動でスケーリングします
+3. **データベース**: Supabaseが永続的なPostgreSQLデータベースを提供します
+4. **スケーリング**: VercelとSupabase両方が自動でスケーリングします
+5. **セキュリティ**: Supabaseでは必要に応じてRow Level Security (RLS) を設定できます
 
 ## 開発環境での実行
 
