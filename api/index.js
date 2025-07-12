@@ -177,19 +177,33 @@ app.get('/api/status-options', async (req, res) => {
 
 // Upload CSV file and parse status options
 app.post('/api/upload-csv', uploadCSV.single('csvFile'), async (req, res) => {
+  console.log('CSV upload request received');
+  
   if (!req.file) {
+    console.log('No file uploaded');
     return res.status(400).json({ error: 'CSVファイルが選択されていません' });
   }
+
+  console.log('File received:', {
+    originalname: req.file.originalname,
+    mimetype: req.file.mimetype,
+    size: req.file.size,
+    path: req.file.path
+  });
 
   const results = [];
   const filePath = req.file.path;
 
+  console.log('Starting CSV file read from:', filePath);
+  
   fs.createReadStream(filePath)
     .pipe(csv({ headers: false }))
     .on('data', (data) => {
       // B列（インデックス1）とD列（インデックス3）を取得
       const status = data['1']; // B列
       const memo = data['3'];   // D列
+      
+      console.log('CSV row data:', { status, memo, fullData: data });
       
       if (status && status.trim()) {
         results.push({
@@ -199,6 +213,7 @@ app.post('/api/upload-csv', uploadCSV.single('csvFile'), async (req, res) => {
       }
     })
     .on('end', async () => {
+      console.log('CSV parsing completed. Results count:', results.length);
       try {
         // 重複を除去
         const uniqueStatuses = [];
@@ -211,8 +226,12 @@ app.post('/api/upload-csv', uploadCSV.single('csvFile'), async (req, res) => {
           }
         });
         
+        console.log('Unique statuses to save:', uniqueStatuses);
+        
         // データベースに保存
+        console.log('Saving to database...');
         await statusOptionsDB.createMany(uniqueStatuses);
+        console.log('Database save completed');
         
         // アップロードしたファイルを削除
         fs.unlinkSync(filePath);
@@ -223,6 +242,7 @@ app.post('/api/upload-csv', uploadCSV.single('csvFile'), async (req, res) => {
         });
       } catch (error) {
         console.error('データベース保存エラー:', error);
+        console.error('Error stack:', error.stack);
         
         // エラー時もファイルを削除
         if (fs.existsSync(filePath)) {
@@ -231,12 +251,14 @@ app.post('/api/upload-csv', uploadCSV.single('csvFile'), async (req, res) => {
         
         res.status(500).json({ 
           error: 'データベースへの保存に失敗しました',
-          details: error.message
+          details: error.message,
+          errorType: error.constructor.name
         });
       }
     })
     .on('error', (error) => {
       console.error('CSV解析エラー:', error);
+      console.error('Error stack:', error.stack);
       
       // エラー時もファイルを削除
       if (fs.existsSync(filePath)) {
