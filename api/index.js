@@ -21,6 +21,7 @@ app.set('trust proxy', 1);
 let twitterClient = null;
 let authMethod = null;
 let connectionVerified = false;
+let authenticatedUser = null;
 
 try {
   // OAuth 1.0a認証情報をチェック
@@ -44,11 +45,16 @@ try {
         try {
           const response = await twitterClient.v1.get('account/verify_credentials.json');
           connectionVerified = true;
-          console.log('✅ Twitter API接続テスト成功:', {
-            userId: response.id_str,
+          authenticatedUser = {
+            id: response.id_str,
             username: response.screen_name,
-            name: response.name
-          });
+            name: response.name,
+            verified: response.verified,
+            profileImageUrl: response.profile_image_url_https,
+            followersCount: response.followers_count,
+            friendsCount: response.friends_count
+          };
+          console.log('✅ Twitter API接続テスト成功:', authenticatedUser);
         } catch (error) {
           connectionVerified = false;
           console.error('❌ Twitter API接続テスト失敗:', error.message);
@@ -462,15 +468,11 @@ app.get('/api/twitter/status', async (req, res) => {
       note: 'テストモード: 実際のAPI接続確認はスキップされています',
       testMode: true
     });
-  } else if (connectionVerified) {
+  } else if (connectionVerified && authenticatedUser) {
     res.json({
       connected: true,
       authMethod: authMethod,
-      user: {
-        id: 'verified',
-        name: 'API Connection Verified',
-        username: 'verified_user'
-      },
+      user: authenticatedUser,
       canTweet: authMethod === 'OAuth1',
       envStatus: envStatus,
       credentials: maskedCredentials,
