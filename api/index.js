@@ -144,6 +144,16 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    supabase: !!process.env.SUPABASE_URL,
+    twitter: !!process.env.TWITTER_API_KEY
+  });
+});
+
 app.get('/api/posts', async (req, res) => {
   try {
     const posts = await postsDB.getAll();
