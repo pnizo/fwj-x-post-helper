@@ -64,7 +64,7 @@ initializeDatabase();
 
 // Configure multer for CSV file uploads
 const uploadCSV = multer({
-  dest: 'uploads/',
+  dest: '/tmp/',
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
       cb(null, true);
@@ -76,7 +76,7 @@ const uploadCSV = multer({
 
 // Configure multer for media file uploads
 const uploadMedia = multer({
-  dest: 'uploads/media/',
+  dest: '/tmp/',
   limits: {
     fileSize: 50 * 1024 * 1024, // 50MB limit
     files: 4 // Maximum 4 files
@@ -269,7 +269,7 @@ app.post('/api/upload-media', uploadMedia.array('mediaFiles', 4), async (req, re
 // Get uploaded media file
 app.get('/api/media/:filename', (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(__dirname, 'uploads/media', filename);
+  const filePath = path.join('/tmp', filename);
   
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);
@@ -569,7 +569,7 @@ app.post('/api/posts/:id/tweet', async (req, res) => {
     if (mediaFiles && mediaFiles.length > 0) {
       for (const mediaFile of mediaFiles) {
         try {
-          const mediaFilePath = path.join(__dirname, 'uploads/media', mediaFile.filename);
+          const mediaFilePath = path.join('/tmp', mediaFile.filename);
           if (fs.existsSync(mediaFilePath)) {
             const mediaId = await uploadMediaToTwitter(mediaFilePath);
             mediaIds.push(mediaId);
@@ -601,7 +601,7 @@ app.post('/api/posts/:id/tweet', async (req, res) => {
     // アップロードしたメディアファイルを削除
     if (mediaFiles && mediaFiles.length > 0) {
       mediaFiles.forEach(mediaFile => {
-        const mediaFilePath = path.join(__dirname, 'uploads/media', mediaFile.filename);
+        const mediaFilePath = path.join('/tmp', mediaFile.filename);
         if (fs.existsSync(mediaFilePath)) {
           fs.unlinkSync(mediaFilePath);
         }
