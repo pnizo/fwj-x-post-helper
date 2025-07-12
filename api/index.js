@@ -13,6 +13,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for Vercel deployment (handles X-Forwarded-For headers)
+app.set('trust proxy', true);
+
 // Twitter API クライアント初期化
 let twitterClient = null;
 let authMethod = null;
@@ -679,6 +682,13 @@ app.post('/api/posts/:id/tweet', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// For Vercel serverless functions, export the app instead of listening
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+} else {
+  console.log('Legacy server listening...');
+}
+
+module.exports = app;
