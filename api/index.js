@@ -7,7 +7,7 @@ const { TwitterApi } = require('twitter-api-v2');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
-const { initializeDatabase, postsDB, statusOptionsDB } = require('./lib/db');
+const { initializeDatabase, postsDB, statusOptionsDB } = require('../lib/db');
 require('dotenv').config();
 
 const app = express();
@@ -57,7 +57,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Initialize database on startup
 initializeDatabase();
@@ -138,7 +138,7 @@ function generateTweetText(post) {
 
 // Routes
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
 app.get('/api/posts', async (req, res) => {
