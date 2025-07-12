@@ -636,22 +636,57 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 状況オプションの読み込み完了を待ってから状況を設定
                 // 少し遅延させてstatusSelectのオプションが読み込まれるのを待つ
                 setTimeout(() => {
-                    // 状況を設定
-                    const statusOption = Array.from(statusSelect.options).find(option => 
+                    // 最新投稿の状況のインデックスを取得
+                    const currentStatusIndex = Array.from(statusSelect.options).findIndex(option => 
                         option.value === latestData.status
                     );
                     
-                    if (statusOption) {
-                        statusSelect.value = latestData.status;
-                        // メッセージも自動設定
-                        updateMessageFromStatus(latestData.status);
+                    if (currentStatusIndex !== -1) {
+                        // 次の状況オプションを選択（最後の項目の場合は「選択してください」に戻る）
+                        const nextIndex = currentStatusIndex + 1;
+                        if (nextIndex < statusSelect.options.length) {
+                            statusSelect.selectedIndex = nextIndex;
+                            
+                            // 選択された状況に基づいてメッセージを更新
+                            const selectedStatus = statusSelect.value;
+                            if (selectedStatus) {
+                                updateMessageFromStatus(selectedStatus);
+                            }
+                            
+                            console.log('✅ 最新投稿データから初期値を設定しました（次の状況）:', {
+                                contestName: latestData.contestName,
+                                previousStatus: latestData.status,
+                                nextStatus: selectedStatus,
+                                createdAt: latestData.createdAt
+                            });
+                        } else {
+                            // 最後の項目の場合は「選択してください」（インデックス0）を選択
+                            statusSelect.selectedIndex = 0;
+                            
+                            console.log('✅ 最新投稿データから初期値を設定しました（最終状況のため選択なし）:', {
+                                contestName: latestData.contestName,
+                                previousStatus: latestData.status,
+                                nextStatus: '選択してください',
+                                createdAt: latestData.createdAt
+                            });
+                        }
+                    } else {
+                        // 最新投稿の状況が見つからない場合は最初の実際のオプションを選択
+                        if (statusSelect.options.length > 1) {
+                            statusSelect.selectedIndex = 1;
+                            const selectedStatus = statusSelect.value;
+                            if (selectedStatus) {
+                                updateMessageFromStatus(selectedStatus);
+                            }
+                        }
+                        
+                        console.log('⚠️ 最新投稿の状況が見つからないため、最初のオプションを設定しました:', {
+                            contestName: latestData.contestName,
+                            previousStatus: latestData.status,
+                            fallbackStatus: statusSelect.value,
+                            createdAt: latestData.createdAt
+                        });
                     }
-                    
-                    console.log('✅ 最新投稿データから初期値を設定しました:', {
-                        contestName: latestData.contestName,
-                        status: latestData.status,
-                        createdAt: latestData.createdAt
-                    });
                 }, 500); // 500ms待機
             } else {
                 console.log('ℹ️ 投稿履歴がないため、初期値は設定されませんでした');
