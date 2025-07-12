@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const csvStatusDiv = document.getElementById('csvStatus');
     const statusSelect = document.getElementById('status');
     const messageTextarea = document.getElementById('message');
+    const clearAllPostsBtn = document.getElementById('clearAllPosts');
 
     // Load posts, saved contest names, auth status, and status options on page load
     loadPosts();
@@ -100,6 +101,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (contestName) {
             saveContestName(contestName);
         }
+    });
+
+    // Clear all posts functionality
+    clearAllPostsBtn.addEventListener('click', function() {
+        clearAllPosts();
     });
 
     // Save contest name function
@@ -693,6 +699,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('初期値の読み込みに失敗:', error);
+        }
+    }
+
+    // Clear all posts with confirmation
+    async function clearAllPosts() {
+        // 確認ダイアログを表示
+        const confirmed = window.confirm('すべての投稿履歴を削除しますか？\n\nこの操作は取り消せません。');
+        
+        if (!confirmed) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/posts/all', {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showNotification(result.message, 'success');
+                
+                // 投稿リストを再読み込み
+                loadPosts();
+                
+                console.log('✅ すべての投稿履歴を削除しました');
+            } else {
+                const error = await response.json();
+                showNotification(error.error || '削除に失敗しました', 'error');
+            }
+        } catch (error) {
+            console.error('削除エラー:', error);
+            showNotification('ネットワークエラーが発生しました', 'error');
         }
     }
 

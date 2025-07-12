@@ -667,6 +667,18 @@ app.post('/api/posts', async (req, res) => {
   }
 });
 
+// Clear all posts
+app.delete('/api/posts/all', async (req, res) => {
+  try {
+    const result = await postsDB.deleteAll();
+    console.log('✅ すべての投稿履歴を削除しました');
+    res.json(result);
+  } catch (error) {
+    console.error('投稿履歴削除エラー:', error);
+    res.status(500).json({ error: 'データベースエラーが発生しました' });
+  }
+});
+
 // ツイートテキストプレビュー機能
 app.get('/api/posts/:id/preview', async (req, res) => {
   const postId = req.params.id;

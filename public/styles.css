@@ -56,6 +56,17 @@ main {
     font-size: 1.8em;
 }
 
+.posts-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.posts-history-header h2 {
+    margin-bottom: 0;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -145,6 +156,17 @@ main {
 
 .btn-save:hover {
     background: #218838;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
 }
 
 .contest-name-container {
