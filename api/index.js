@@ -191,85 +191,142 @@ app.post('/api/upload-csv', uploadCSV.single('csvFile'), async (req, res) => {
     path: req.file.path
   });
 
-  const results = [];
   const filePath = req.file.path;
-
   console.log('Starting CSV file read from:', filePath);
-  
-  fs.createReadStream(filePath)
-    .pipe(csv({ headers: false }))
-    .on('data', (data) => {
-      // B列（インデックス1）とD列（インデックス3）を取得
-      const status = data['1']; // B列
-      const memo = data['3'];   // D列
-      
-      console.log('CSV row data:', { status, memo, fullData: data });
-      
-      if (status && status.trim()) {
-        results.push({
-          status: status.trim(),
-          memo: memo ? memo.trim() : ''
-        });
-      }
-    })
-    .on('end', async () => {
-      console.log('CSV parsing completed. Results count:', results.length);
-      try {
-        // 重複を除去
-        const uniqueStatuses = [];
-        const seenStatuses = new Set();
-        
-        results.forEach(item => {
-          if (!seenStatuses.has(item.status)) {
-            seenStatuses.add(item.status);
-            uniqueStatuses.push(item);
+
+  // ファイルの存在確認
+  if (!fs.existsSync(filePath)) {
+    console.error('Uploaded file does not exist at path:', filePath);
+    return res.status(500).json({ error: 'アップロードされたファイルが見つかりません' });
+  }
+
+  try {
+    const results = [];
+    let processingComplete = false;
+    let processingError = null;
+
+    // Promise を使って非同期処理を同期的に扱う
+    await new Promise((resolve, reject) => {
+      const stream = fs.createReadStream(filePath, { encoding: 'utf8' })
+        .pipe(csv({ 
+          headers: false,
+          skipEmptyLines: true,
+          skipLinesWithError: true
+        }))
+        .on('data', (data) => {
+          try {
+            console.log('Raw CSV row data:', data);
+            
+            // データが配列形式の場合とオブジェクト形式の場合の両方に対応
+            let status, memo;
+            
+            if (Array.isArray(data)) {
+              status = data[1]; // B列（インデックス1）
+              memo = data[3];   // D列（インデックス3）
+            } else {
+              // オブジェクト形式の場合（列番号をキーとして使用）
+              status = data['1'] || data[1];
+              memo = data['3'] || data[3];
+            }
+            
+            console.log('Extracted data:', { status, memo });
+            
+            if (status && typeof status === 'string' && status.trim()) {
+              results.push({
+                status: status.trim(),
+                memo: memo && typeof memo === 'string' ? memo.trim() : ''
+              });
+              console.log('Added to results:', { status: status.trim(), memo: memo ? memo.trim() : '' });
+            }
+          } catch (rowError) {
+            console.error('Error processing CSV row:', rowError, 'Data:', data);
           }
+        })
+        .on('end', () => {
+          console.log('CSV parsing completed. Total results:', results.length);
+          processingComplete = true;
+          resolve();
+        })
+        .on('error', (error) => {
+          console.error('CSV parsing stream error:', error);
+          processingError = error;
+          reject(error);
         });
-        
-        console.log('Unique statuses to save:', uniqueStatuses);
-        
-        // データベースに保存
-        console.log('Saving to database...');
-        await statusOptionsDB.createMany(uniqueStatuses);
-        console.log('Database save completed');
-        
-        // アップロードしたファイルを削除
-        fs.unlinkSync(filePath);
-        
-        res.json({ 
-          message: `${uniqueStatuses.length}個の状況オプションを読み込みました`,
-          statusOptions: uniqueStatuses
-        });
-      } catch (error) {
-        console.error('データベース保存エラー:', error);
-        console.error('Error stack:', error.stack);
-        
-        // エラー時もファイルを削除
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+
+      // タイムアウト設定（30秒）
+      setTimeout(() => {
+        if (!processingComplete) {
+          stream.destroy();
+          reject(new Error('CSV processing timeout'));
         }
-        
-        res.status(500).json({ 
-          error: 'データベースへの保存に失敗しました',
-          details: error.message,
-          errorType: error.constructor.name
-        });
+      }, 30000);
+    });
+
+    if (processingError) {
+      throw processingError;
+    }
+
+    console.log('All results before deduplication:', results);
+
+    // 重複を除去
+    const uniqueStatuses = [];
+    const seenStatuses = new Set();
+    
+    results.forEach(item => {
+      if (!seenStatuses.has(item.status)) {
+        seenStatuses.add(item.status);
+        uniqueStatuses.push(item);
       }
-    })
-    .on('error', (error) => {
-      console.error('CSV解析エラー:', error);
-      console.error('Error stack:', error.stack);
-      
-      // エラー時もファイルを削除
+    });
+    
+    console.log('Unique statuses to save:', uniqueStatuses);
+
+    if (uniqueStatuses.length === 0) {
+      // アップロードしたファイルを削除
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
-      
-      res.status(500).json({ 
-        error: 'CSVファイルの解析に失敗しました',
-        details: error.message
+      return res.status(400).json({ 
+        error: 'CSVファイルから有効な状況データが見つかりませんでした。B列とD列にデータが含まれているか確認してください。'
       });
+    }
+    
+    // データベースに保存
+    console.log('Saving to database...');
+    await statusOptionsDB.createMany(uniqueStatuses);
+    console.log('Database save completed successfully');
+    
+    // アップロードしたファイルを削除
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log('Temporary file deleted');
+    }
+    
+    res.json({ 
+      message: `${uniqueStatuses.length}個の状況オプションを読み込みました`,
+      statusOptions: uniqueStatuses
     });
+
+  } catch (error) {
+    console.error('CSV upload processing error:', error);
+    console.error('Error stack:', error.stack);
+    
+    // エラー時もファイルを削除
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        console.log('Temporary file deleted after error');
+      } catch (unlinkError) {
+        console.error('Failed to delete temporary file:', unlinkError);
+      }
+    }
+    
+    res.status(500).json({ 
+      error: 'CSVファイルの処理に失敗しました',
+      details: error.message,
+      errorType: error.constructor.name
+    });
+  }
 });
 
 // Upload media files
