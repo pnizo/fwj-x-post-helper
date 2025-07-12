@@ -577,9 +577,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 const result = await response.json();
-                showNotification(result.message, 'success');
+                showNotification(result.message + ' - ページを更新しています...', 'success');
                 updateStatusSelect(result.statusOptions);
                 csvFileInput.value = ''; // ファイル選択をクリア
+                
+                // 2秒後にページをリロード（通知を表示してから）
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
             } else {
                 const error = await response.json();
                 showNotification(error.error || 'CSVアップロードに失敗しました', 'error');
