@@ -14,7 +14,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Trust proxy for Vercel deployment (handles X-Forwarded-For headers)
-app.set('trust proxy', true);
+// Use number of proxies instead of true for security
+app.set('trust proxy', 1);
 
 // Twitter API クライアント初期化
 let twitterClient = null;
@@ -48,10 +49,17 @@ try {
 app.use(helmet());
 app.use(cors());
 
-// Rate limiting
+// Rate limiting with enhanced security for Vercel
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  trustProxy: true, // Trust the proxy (Vercel)
+  keyGenerator: (req) => {
+    // Use X-Forwarded-For header for client IP in Vercel environment
+    return req.ip || req.connection.remoteAddress || 'anonymous';
+  }
 });
 app.use(limiter);
 
