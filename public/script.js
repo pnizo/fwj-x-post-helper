@@ -260,9 +260,14 @@ document.addEventListener('DOMContentLoaded', function() {
                              <strong>投稿内容:</strong>
                              <div class="tweet-text">${post.tweet_text}</div>
                          </div>` : ''}` :
-                        `<button class="btn btn-primary" data-action="preview" data-post-id="${post.id}">
-                            プレビュー・投稿
-                        </button>`
+                        `<div class="unpublished-actions">
+                            <button class="btn btn-primary" data-action="preview" data-post-id="${post.id}">
+                                プレビュー・投稿
+                            </button>
+                            <button class="btn btn-delete" data-action="delete" data-post-id="${post.id}" title="この投稿を削除">
+                                🗑️
+                            </button>
+                         </div>`
                     }
                 </div>
             </div>
@@ -276,6 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (action === 'preview') {
                     previewTweet(postId);
+                } else if (action === 'delete') {
+                    deletePost(postId);
                 }
             });
         });
@@ -724,6 +731,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadPosts();
                 
                 console.log('✅ すべての投稿履歴を削除しました');
+            } else {
+                const error = await response.json();
+                showNotification(error.error || '削除に失敗しました', 'error');
+            }
+        } catch (error) {
+            console.error('削除エラー:', error);
+            showNotification('ネットワークエラーが発生しました', 'error');
+        }
+    }
+
+    // Delete individual post with confirmation
+    async function deletePost(postId) {
+        // 確認ダイアログを表示
+        const confirmed = window.confirm('この投稿を削除しますか？\n\nこの操作は取り消せません。');
+        
+        if (!confirmed) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/posts/${postId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                showNotification(result.message, 'success');
+                
+                // 投稿リストを再読み込み
+                loadPosts();
+                
+                console.log('✅ 投稿を削除しました:', postId);
             } else {
                 const error = await response.json();
                 showNotification(error.error || '削除に失敗しました', 'error');

@@ -7,6 +7,7 @@ const { TwitterApi } = require('twitter-api-v2');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
+const basicAuth = require('basic-auth');
 const { initializeDatabase, postsDB, statusOptionsDB } = require('../lib/db');
 require('dotenv').config();
 
@@ -86,6 +87,35 @@ try {
 // Security middleware
 app.use(helmet());
 app.use(cors());
+
+// Basic Authentication middleware
+function basicAuthMiddleware(req, res, next) {
+  // Skip auth for health check
+  if (req.path === '/health') {
+    return next();
+  }
+
+  // Check if basic auth is enabled
+  const authUsername = process.env.BASIC_AUTH_USERNAME;
+  const authPassword = process.env.BASIC_AUTH_PASSWORD;
+  
+  if (!authUsername || !authPassword) {
+    console.log('Basic認証が無効です (環境変数が設定されていません)');
+    return next();
+  }
+
+  const credentials = basicAuth(req);
+  
+  if (!credentials || credentials.name !== authUsername || credentials.pass !== authPassword) {
+    res.set('WWW-Authenticate', 'Basic realm="FWJ Contest Progress"');
+    return res.status(401).json({ error: '認証が必要です' });
+  }
+  
+  console.log('✅ Basic認証成功:', credentials.name);
+  next();
+}
+
+app.use(basicAuthMiddleware);
 
 // Rate limiting with enhanced security for Vercel
 const limiter = rateLimit({
@@ -675,6 +705,31 @@ app.delete('/api/posts/all', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('投稿履歴削除エラー:', error);
+    res.status(500).json({ error: 'データベースエラーが発生しました' });
+  }
+});
+
+// Delete individual post
+app.delete('/api/posts/:id', async (req, res) => {
+  const postId = req.params.id;
+  
+  try {
+    // 投稿が存在するかチェック
+    const post = await postsDB.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: '投稿が見つかりません' });
+    }
+    
+    // 投稿済みの場合は削除を拒否
+    if (post.posted) {
+      return res.status(400).json({ error: '投稿済みの投稿は削除できません' });
+    }
+    
+    const result = await postsDB.deleteById(postId);
+    console.log('✅ 投稿を削除しました:', { id: postId, contestName: post.contest_name, status: post.status });
+    res.json(result);
+  } catch (error) {
+    console.error('投稿削除エラー:', error);
     res.status(500).json({ error: 'データベースエラーが発生しました' });
   }
 });

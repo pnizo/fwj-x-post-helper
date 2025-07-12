@@ -169,6 +169,27 @@ main {
     border-color: #bd2130;
 }
 
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+    padding: 5px 10px;
+    font-size: 16px;
+    min-width: auto;
+    margin-left: 10px;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+    border-color: #bd2130;
+}
+
+.unpublished-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .contest-name-container {
     display: flex;
     align-items: center;
