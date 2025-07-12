@@ -108,19 +108,11 @@ function generateTweetText(post) {
   
   let tweetText = '';
   
-  // コンテスト情報を追加
-  tweetText += `🏆 ${contestName}\n`;
+  // コンテスト情報を追加（絵文字なし）
+  tweetText += `${contestName}\n`;
   
-  // 状況に応じた絵文字を追加
-  const statusEmojis = {
-    '開始': '🚀',
-    '進行中': '⚡',
-    '終了': '✅',
-    '延期': '⏰',
-    '中止': '❌'
-  };
-  
-  tweetText += `${statusEmojis[status] || '📊'} ${status}`;
+  // 状況を追加（絵文字なし）
+  tweetText += `${status}`;
   
   // メッセージを追加
   if (message && message.trim()) {
@@ -130,7 +122,7 @@ function generateTweetText(post) {
   // 280文字制限を確認
   if (tweetText.length > 280) {
     // 長すぎる場合は短縮
-    const baseText = `🏆 ${contestName}\n${statusEmojis[status] || '📊'} ${status}\n\n`;
+    const baseText = `${contestName}\n${status}\n\n`;
     const availableLength = 280 - baseText.length - 3; // "..." 分を引く
     const shortenedMessage = message.substring(0, availableLength);
     tweetText = baseText + shortenedMessage + '...';
