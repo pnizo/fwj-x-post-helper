@@ -494,16 +494,72 @@ app.get('/api/twitter/status', async (req, res) => {
       connectionVerified: true
     });
   } else {
-    res.json({
-      connected: false,
-      authMethod: authMethod,
-      user: null,
-      canTweet: false,
-      envStatus: envStatus,
-      credentials: maskedCredentials,
-      note: '本番モード: API接続確認が必要です',
-      connectionVerified: false
-    });
+    // 本番モードで接続テストがまだ実行されていない場合、リアルタイムでテストを実行
+    if (process.env.TEST_MODE !== 'true' && twitterClient && !connectionVerified) {
+      try {
+        console.log('🔄 リアルタイムTwitter API接続テストを実行中...');
+        const response = await twitterClient.v1.get('account/verify_credentials.json');
+        connectionVerified = true;
+        authenticatedUser = {
+          id: response.id_str,
+          username: response.screen_name,
+          name: response.name,
+          verified: response.verified,
+          profileImageUrl: response.profile_image_url_https,
+          followersCount: response.followers_count,
+          friendsCount: response.friends_count
+        };
+        
+        console.log('✅ リアルタイムTwitter API接続テスト成功:', authenticatedUser);
+        console.log('認証ユーザー詳細情報:', {
+          id: authenticatedUser.id,
+          name: authenticatedUser.name,
+          username: authenticatedUser.username,
+          verified: authenticatedUser.verified,
+          followersCount: authenticatedUser.followersCount,
+          friendsCount: authenticatedUser.friendsCount,
+          profileImageUrl: authenticatedUser.profileImageUrl
+        });
+        console.log('認証方式:', authMethod);
+        console.log('投稿権限:', authMethod === 'OAuth1' ? '✅ あり' : '❌ なし');
+        console.log('接続確認時刻:', new Date().toISOString());
+        
+        res.json({
+          connected: true,
+          authMethod: authMethod,
+          user: authenticatedUser,
+          canTweet: authMethod === 'OAuth1',
+          envStatus: envStatus,
+          credentials: maskedCredentials,
+          note: '本番モード: API接続確認済み（リアルタイムテスト）',
+          connectionVerified: true
+        });
+      } catch (error) {
+        console.error('❌ リアルタイムTwitter API接続テスト失敗:', error.message);
+        res.json({
+          connected: false,
+          authMethod: authMethod,
+          user: null,
+          canTweet: false,
+          envStatus: envStatus,
+          credentials: maskedCredentials,
+          note: '本番モード: API接続テスト失敗',
+          connectionVerified: false,
+          error: error.message
+        });
+      }
+    } else {
+      res.json({
+        connected: false,
+        authMethod: authMethod,
+        user: null,
+        canTweet: false,
+        envStatus: envStatus,
+        credentials: maskedCredentials,
+        note: '本番モード: API接続確認が必要です',
+        connectionVerified: false
+      });
+    }
   }
 
 });
