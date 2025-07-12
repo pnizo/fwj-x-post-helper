@@ -1,7 +1,7 @@
 {
   "name": "fwj-contest-tweeter",
   "version": "1.0.0",
-  "description": "Web app for posting FWJ contest progress to X (Twitter)",
+  "description": "FWJコンテスト進行状況投稿アプリ - Web app for posting FWJ contest progress to X (Twitter) with Supabase & Vercel",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
