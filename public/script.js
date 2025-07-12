@@ -233,11 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
                              <strong>投稿内容:</strong>
                              <div class="tweet-text">${post.tweet_text}</div>
                          </div>` : ''}` :
-                        `<button class="btn btn-secondary" data-action="preview" data-post-id="${post.id}">
-                            プレビュー
-                        </button>
-                        <button class="btn btn-twitter" data-action="tweet" data-post-id="${post.id}">
-                            Xに投稿
+                        `<button class="btn btn-primary" data-action="preview" data-post-id="${post.id}">
+                            プレビュー・投稿
                         </button>`
                     }
                 </div>
@@ -252,8 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (action === 'preview') {
                     previewTweet(postId);
-                } else if (action === 'tweet') {
-                    tweetPost(postId);
                 }
             });
         });
