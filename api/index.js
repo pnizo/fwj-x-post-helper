@@ -469,6 +469,20 @@ app.get('/api/twitter/status', async (req, res) => {
       testMode: true
     });
   } else if (connectionVerified && authenticatedUser) {
+    console.log('✅ Twitter API接続状態確認成功');
+    console.log('認証ユーザー詳細情報:', {
+      id: authenticatedUser.id,
+      name: authenticatedUser.name,
+      username: authenticatedUser.username,
+      verified: authenticatedUser.verified,
+      followersCount: authenticatedUser.followersCount,
+      friendsCount: authenticatedUser.friendsCount,
+      profileImageUrl: authenticatedUser.profileImageUrl
+    });
+    console.log('認証方式:', authMethod);
+    console.log('投稿権限:', authMethod === 'OAuth1' ? '✅ あり' : '❌ なし');
+    console.log('接続確認時刻:', new Date().toISOString());
+    
     res.json({
       connected: true,
       authMethod: authMethod,
