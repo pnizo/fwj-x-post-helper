@@ -20,6 +20,7 @@ app.set('trust proxy', 1);
 // Twitter API クライアント初期化
 let twitterClient = null;
 let authMethod = null;
+let connectionVerified = false;
 
 try {
   // OAuth 1.0a認証情報をチェック
@@ -33,6 +34,37 @@ try {
     });
     authMethod = 'OAuth1';
     console.log('Twitter API接続設定完了 (OAuth 1.0a)');
+
+    // TEST_MODE=trueでない場合は実際の接続テストを実行
+    if (process.env.TEST_MODE !== 'true') {
+      console.log('実本番モード: Twitter API接続テストを実行します...');
+      
+      // 非同期で接続テストを実行（サーバー起動をブロックしない）
+      (async () => {
+        try {
+          const response = await twitterClient.v1.get('account/verify_credentials.json');
+          connectionVerified = true;
+          console.log('✅ Twitter API接続テスト成功:', {
+            userId: response.id_str,
+            username: response.screen_name,
+            name: response.name
+          });
+        } catch (error) {
+          connectionVerified = false;
+          console.error('❌ Twitter API接続テスト失敗:', error.message);
+          if (error.code === 401) {
+            console.error('認証エラー: API認証情報を確認してください');
+          } else if (error.code === 403) {
+            console.error('権限エラー: アプリの権限設定を確認してください');
+          } else if (error.code === 429) {
+            console.error('Rate Limit: APIの利用制限に達しています');
+          }
+        }
+      })();
+    } else {
+      console.log('テストモード: Twitter API接続テストをスキップします');
+      connectionVerified = true; // テストモードでは接続済みとみなす
+    }
   } else {
     console.log('Twitter API認証情報が設定されていません。.envファイルを確認してください。');
     console.log('必要な環境変数:');
@@ -414,20 +446,49 @@ app.get('/api/twitter/status', async (req, res) => {
     });
   }
 
-  // 実際のAPI呼び出しは行わず、設定状況のみを返す（Rate Limit回避）
-  res.json({
-    connected: !!twitterClient,
-    authMethod: authMethod,
-    user: {
-      id: 'configured',
-      name: 'Twitter API Configured',
-      username: 'api_user'
-    },
-    canTweet: authMethod === 'OAuth1',
-    envStatus: envStatus,
-    credentials: maskedCredentials,
-    note: 'API接続確認は省略されました（Rate Limit回避）'
-  });
+  // TEST_MODE=trueまたは接続確認済みの場合は設定状況を返す
+  if (process.env.TEST_MODE === 'true') {
+    res.json({
+      connected: !!twitterClient,
+      authMethod: authMethod,
+      user: {
+        id: 'test_mode',
+        name: 'Test Mode User',
+        username: 'test_user'
+      },
+      canTweet: authMethod === 'OAuth1',
+      envStatus: envStatus,
+      credentials: maskedCredentials,
+      note: 'テストモード: 実際のAPI接続確認はスキップされています',
+      testMode: true
+    });
+  } else if (connectionVerified) {
+    res.json({
+      connected: true,
+      authMethod: authMethod,
+      user: {
+        id: 'verified',
+        name: 'API Connection Verified',
+        username: 'verified_user'
+      },
+      canTweet: authMethod === 'OAuth1',
+      envStatus: envStatus,
+      credentials: maskedCredentials,
+      note: '本番モード: API接続確認済み',
+      connectionVerified: true
+    });
+  } else {
+    res.json({
+      connected: false,
+      authMethod: authMethod,
+      user: null,
+      canTweet: false,
+      envStatus: envStatus,
+      credentials: maskedCredentials,
+      note: '本番モード: API接続確認が必要です',
+      connectionVerified: false
+    });
+  }
 
 });
 
