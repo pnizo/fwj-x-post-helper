@@ -183,10 +183,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 const newPost = await response.json();
                 showNotification('投稿を作成しました', 'success');
                 
-                // コンテスト名を保持してフォームをリセット
+                // コンテスト名と現在の状況を保持
                 const savedContestName = contestNameInput.value;
+                const currentStatusIndex = statusSelect.selectedIndex;
+                
+                // フォームをリセット
                 postForm.reset();
                 contestNameInput.value = savedContestName;
+                
+                // 次の状況オプションを選択（最後の項目の場合は「選択してください」に戻る）
+                if (statusSelect.options.length > 1) { // 「選択してください」以外にオプションがある場合
+                    const nextIndex = currentStatusIndex + 1;
+                    if (nextIndex < statusSelect.options.length) {
+                        statusSelect.selectedIndex = nextIndex;
+                        
+                        // 選択された状況に基づいてメッセージを更新
+                        const selectedStatus = statusSelect.value;
+                        if (selectedStatus) {
+                            updateMessageFromStatus(selectedStatus);
+                        }
+                    } else {
+                        // 最後の項目の場合は「選択してください」（インデックス0）を選択
+                        statusSelect.selectedIndex = 0;
+                    }
+                }
                 
                 loadPosts();
             } else {
