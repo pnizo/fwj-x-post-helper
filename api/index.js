@@ -777,11 +777,19 @@ app.post('/api/posts/:id/tweet', async (req, res) => {
       tweetOptions.media = { media_ids: mediaIds };
     }
     
-    // リプライ先がある場合はリプライとして投稿
+    // リプライ先がある場合はリプライとして投稿（有効なTwitter IDの場合のみ）
     if (previousPost && previousPost.tweet_id) {
-      tweetOptions.reply = {
-        in_reply_to_tweet_id: previousPost.tweet_id
-      };
+      // Twitter IDは1-19桁の数字である必要がある
+      const isValidTwitterId = /^[0-9]{1,19}$/.test(previousPost.tweet_id);
+      
+      if (isValidTwitterId) {
+        tweetOptions.reply = {
+          in_reply_to_tweet_id: previousPost.tweet_id
+        };
+        console.log('✅ リプライとして投稿します。リプライ先ID:', previousPost.tweet_id);
+      } else {
+        console.log('⚠️ 無効なTwitter ID（テストIDまたは削除済み）のため、通常の投稿として処理します。ID:', previousPost.tweet_id);
+      }
     }
     
     const tweet = await twitterClient.v2.tweet(tweetOptions);
@@ -799,13 +807,15 @@ app.post('/api/posts/:id/tweet', async (req, res) => {
     // 投稿成功時の処理 - データベースを更新
     const updatedPost = await postsDB.updateTweetInfo(postId, tweet.data.id, tweetText);
     
-    const replyInfo = previousPost ? ' (リプライとして投稿)' : '';
+    // 実際にリプライとして投稿されたかどうかを判定
+    const wasPostedAsReply = previousPost && previousPost.tweet_id && /^[0-9]{1,19}$/.test(previousPost.tweet_id);
+    const replyInfo = wasPostedAsReply ? ' (リプライとして投稿)' : '';
     
     res.json({ 
       message: 'Xに投稿しました！' + replyInfo, 
       post: updatedPost, 
       tweetUrl: `https://twitter.com/user/status/${tweet.data.id}`,
-      replyTo: previousPost ? {
+      replyTo: wasPostedAsReply ? {
         id: previousPost.id,
         tweetId: previousPost.tweet_id,
         contestName: previousPost.contest_name
