@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSavedContestNames();
     checkAuthStatus();
     loadStatusOptions();
+    loadInitialFormValues();
 
     // Check for auth result in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -619,6 +620,44 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!messageTextarea.value.trim()) {
                 messageTextarea.value = selectedOption.dataset.memo;
             }
+        }
+    }
+
+    // Load initial form values from latest post
+    async function loadInitialFormValues() {
+        try {
+            const response = await fetch('/api/posts/latest');
+            const latestData = await response.json();
+            
+            if (latestData.hasData) {
+                // コンテスト名を設定
+                contestNameInput.value = latestData.contestName;
+                
+                // 状況オプションの読み込み完了を待ってから状況を設定
+                // 少し遅延させてstatusSelectのオプションが読み込まれるのを待つ
+                setTimeout(() => {
+                    // 状況を設定
+                    const statusOption = Array.from(statusSelect.options).find(option => 
+                        option.value === latestData.status
+                    );
+                    
+                    if (statusOption) {
+                        statusSelect.value = latestData.status;
+                        // メッセージも自動設定
+                        updateMessageFromStatus(latestData.status);
+                    }
+                    
+                    console.log('✅ 最新投稿データから初期値を設定しました:', {
+                        contestName: latestData.contestName,
+                        status: latestData.status,
+                        createdAt: latestData.createdAt
+                    });
+                }, 500); // 500ms待機
+            } else {
+                console.log('ℹ️ 投稿履歴がないため、初期値は設定されませんでした');
+            }
+        } catch (error) {
+            console.error('初期値の読み込みに失敗:', error);
         }
     }
 

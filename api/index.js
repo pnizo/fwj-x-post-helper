@@ -202,6 +202,33 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
+// Get latest post for initial form values
+app.get('/api/posts/latest', async (req, res) => {
+  try {
+    const posts = await postsDB.getAll();
+    if (posts.length === 0) {
+      return res.json({ 
+        hasData: false,
+        contestName: '',
+        status: ''
+      });
+    }
+    
+    // 最新の投稿を取得（created_atで降順ソート済み）
+    const latestPost = posts[0];
+    
+    res.json({
+      hasData: true,
+      contestName: latestPost.contest_name,
+      status: latestPost.status,
+      createdAt: latestPost.created_at
+    });
+  } catch (error) {
+    console.error('Latest post取得エラー:', error);
+    res.status(500).json({ error: 'データベースエラーが発生しました' });
+  }
+});
+
 // Get status options from CSV
 app.get('/api/status-options', async (req, res) => {
   try {
