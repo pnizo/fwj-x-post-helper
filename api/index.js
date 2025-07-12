@@ -335,58 +335,21 @@ app.get('/api/twitter/status', async (req, res) => {
     });
   }
 
-  try {
-    // 現在のユーザー情報を取得してAPIアクセスを確認
-    const userInfo = await twitterClient.v2.me();
-    
-    res.json({
-      connected: true,
-      authMethod: authMethod,
-      user: {
-        id: userInfo.data.id,
-        name: userInfo.data.name,
-        username: userInfo.data.username
-      },
-      canTweet: authMethod === 'OAuth1',
-      envStatus: envStatus,
-      credentials: maskedCredentials
-    });
-  } catch (error) {
-    console.error('Twitter API状態確認エラー:', error);
-    
-    let errorMessage = 'Twitter APIへの接続に失敗しました';
-    let troubleshootingTips = [];
-    
-    if (error.code === 401) {
-      errorMessage = 'Twitter API認証が無効です';
-      troubleshootingTips = [
-        '1. API キーとシークレットが正しく設定されているか確認してください',
-        '2. アクセストークンとシークレットが正しく設定されているか確認してください',
-        '3. Twitter Developer Portal でアプリが "Active" 状態か確認してください',
-        '4. アクセストークンが有効期限内か確認してください',
-        '5. 認証情報をコピーする際に余分な空白が含まれていないか確認してください',
-        '6. アプリの権限を変更した場合は、アクセストークンを再生成してください'
-      ];
-    } else if (error.code === 403) {
-      errorMessage = 'Twitter APIの権限が不足しています';
-      troubleshootingTips = [
-        '1. Twitter Developer Portal でアプリの権限を "Read and Write" に設定してください',
-        '2. 権限を変更した後、アクセストークンを再生成してください',
-        '3. Twitter Developer Portal でアプリが承認されているか確認してください'
-      ];
-    }
-    
-    res.json({
-      connected: false,
-      authMethod: authMethod,
-      error: errorMessage,
-      canTweet: false,
-      details: error.message,
-      envStatus: envStatus,
-      credentials: maskedCredentials,
-      troubleshooting: troubleshootingTips
-    });
-  }
+  // 実際のAPI呼び出しは行わず、設定状況のみを返す（Rate Limit回避）
+  res.json({
+    connected: !!twitterClient,
+    authMethod: authMethod,
+    user: {
+      id: 'configured',
+      name: 'Twitter API Configured',
+      username: 'api_user'
+    },
+    canTweet: authMethod === 'OAuth1',
+    envStatus: envStatus,
+    credentials: maskedCredentials,
+    note: 'API接続確認は省略されました（Rate Limit回避）'
+  });
+
 });
 
 // Twitter API基本接続テスト
