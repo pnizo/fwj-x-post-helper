@@ -8,7 +8,7 @@ const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const basicAuth = require('basic-auth');
-const { initializeDatabase, postsDB, statusOptionsDB } = require('../lib/db');
+const { initializeDatabase, postsDB, statusOptionsDB, supabase } = require('../lib/db');
 require('dotenv').config();
 
 const app = express();
