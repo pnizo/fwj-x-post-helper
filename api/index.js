@@ -971,6 +971,36 @@ app.post('/api/posts/:id/tweet', async (req, res) => {
   }
 });
 
+// Keepalive endpoint for Vercel Cron Jobs to prevent Supabase hibernation
+app.get('/api/keepalive', async (req, res) => {
+  try {
+    // Simple database ping to keep Supabase active
+    const { data, error } = await supabase
+      .from('posts')
+      .select('id')
+      .limit(1);
+    
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    
+    console.log('Keepalive ping successful:', new Date().toISOString());
+    res.json({ 
+      status: 'alive', 
+      timestamp: new Date().toISOString(),
+      message: 'Database keepalive ping successful' 
+    });
+  } catch (error) {
+    console.error('Keepalive ping failed:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      timestamp: new Date().toISOString(),
+      message: 'Database keepalive ping failed',
+      error: error.message 
+    });
+  }
+});
+
 // For Vercel serverless functions, export the app instead of listening
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
