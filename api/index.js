@@ -972,7 +972,7 @@ app.post('/api/posts/:id/tweet', async (req, res) => {
 });
 
 // Keepalive endpoint for Vercel Cron Jobs to prevent Supabase hibernation
-app.get('/api/keepalive', async (req, res) => {
+app.get('/keepalive', async (req, res) => {
   try {
     // Simple database ping to keep Supabase active
     const { data, error } = await supabase
