@@ -127,6 +127,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 const result = await response.json();
                 showTextPreviewDialog(result.text, result.charCount);
+                
+                // 状況を次の項目に進める
+                advanceStatusSelection();
             } else {
                 const error = await response.json();
                 showNotification(error.error || 'エラーが発生しました', 'error');
@@ -317,6 +320,30 @@ document.addEventListener('DOMContentLoaded', function() {
             // 現在のメッセージが空の場合のみ自動入力
             if (!messageTextarea.value.trim()) {
                 messageTextarea.value = selectedOption.dataset.memo;
+            }
+        }
+    }
+
+    // Advance status selection to next item
+    function advanceStatusSelection() {
+        const currentStatusIndex = statusSelect.selectedIndex;
+        
+        // 次の状況オプションを選択（最後の項目の場合は「選択してください」に戻る）
+        if (statusSelect.options.length > 1) { // 「選択してください」以外にオプションがある場合
+            const nextIndex = currentStatusIndex + 1;
+            if (nextIndex < statusSelect.options.length) {
+                statusSelect.selectedIndex = nextIndex;
+                
+                // 選択された状況に基づいてメッセージを更新
+                const selectedStatus = statusSelect.value;
+                if (selectedStatus) {
+                    updateMessageFromStatus(selectedStatus);
+                }
+            } else {
+                // 最後の項目の場合は「選択してください」（インデックス0）を選択
+                statusSelect.selectedIndex = 0;
+                // メッセージをクリア
+                messageTextarea.value = '';
             }
         }
     }
