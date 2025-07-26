@@ -569,7 +569,7 @@ main {
     margin-bottom: 20px;
 }
 
-.tweet-edit-textarea {
+.tweet-edit-textarea, .text-edit-textarea {
     width: 100%;
     min-height: 120px;
     padding: 15px;
@@ -582,7 +582,7 @@ main {
     margin-bottom: 10px;
 }
 
-.tweet-edit-textarea:focus {
+.tweet-edit-textarea:focus, .text-edit-textarea:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -601,6 +601,10 @@ main {
 .char-count-edit.over-limit {
     color: #dc3545;
     font-weight: bold;
+}
+
+.text-edit-container {
+    margin-bottom: 20px;
 }
 
 /* Reply Info Styles */

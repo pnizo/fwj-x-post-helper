@@ -3,12 +3,10 @@ const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { TwitterApi } = require('twitter-api-v2');
 const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
-const basicAuth = require('basic-auth');
-const { initializeDatabase, postsDB, statusOptionsDB, supabase } = require('../lib/db');
+const { statusOptionsDB } = require('../lib/db');
 require('dotenv').config();
 
 const app = express();
@@ -18,104 +16,10 @@ const PORT = process.env.PORT || 3000;
 // Use number of proxies instead of true for security
 app.set('trust proxy', 1);
 
-// Twitter API クライアント初期化
-let twitterClient = null;
-let authMethod = null;
-let connectionVerified = false;
-let authenticatedUser = null;
-
-try {
-  // OAuth 1.0a認証情報をチェック
-  if (process.env.TWITTER_API_KEY && process.env.TWITTER_API_SECRET && 
-      process.env.TWITTER_ACCESS_TOKEN && process.env.TWITTER_ACCESS_TOKEN_SECRET) {
-    twitterClient = new TwitterApi({
-      appKey: process.env.TWITTER_API_KEY,
-      appSecret: process.env.TWITTER_API_SECRET,
-      accessToken: process.env.TWITTER_ACCESS_TOKEN,
-      accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
-    });
-    authMethod = 'OAuth1';
-    console.log('Twitter API接続設定完了 (OAuth 1.0a)');
-
-    // TEST_MODE=trueでない場合は実際の接続テストを実行
-    if (process.env.TEST_MODE !== 'true') {
-      console.log('実本番モード: Twitter API接続テストを実行します...');
-      
-      // 非同期で接続テストを実行（サーバー起動をブロックしない）
-      (async () => {
-        try {
-          const response = await twitterClient.v1.get('account/verify_credentials.json');
-          connectionVerified = true;
-          authenticatedUser = {
-            id: response.id_str,
-            username: response.screen_name,
-            name: response.name,
-            verified: response.verified,
-            profileImageUrl: response.profile_image_url_https,
-            followersCount: response.followers_count,
-            friendsCount: response.friends_count
-          };
-          console.log('✅ Twitter API接続テスト成功:', authenticatedUser);
-        } catch (error) {
-          connectionVerified = false;
-          console.error('❌ Twitter API接続テスト失敗:', error.message);
-          if (error.code === 401) {
-            console.error('認証エラー: API認証情報を確認してください');
-          } else if (error.code === 403) {
-            console.error('権限エラー: アプリの権限設定を確認してください');
-          } else if (error.code === 429) {
-            console.error('Rate Limit: APIの利用制限に達しています');
-          }
-        }
-      })();
-    } else {
-      console.log('テストモード: Twitter API接続テストをスキップします');
-      connectionVerified = true; // テストモードでは接続済みとみなす
-    }
-  } else {
-    console.log('Twitter API認証情報が設定されていません。.envファイルを確認してください。');
-    console.log('必要な環境変数:');
-    console.log('- TWITTER_API_KEY');
-    console.log('- TWITTER_API_SECRET');
-    console.log('- TWITTER_ACCESS_TOKEN');
-    console.log('- TWITTER_ACCESS_TOKEN_SECRET');
-  }
-} catch (error) {
-  console.error('Twitter API初期化エラー:', error);
-}
-
 // Security middleware
 app.use(helmet());
 app.use(cors());
 
-// Basic Authentication middleware
-function basicAuthMiddleware(req, res, next) {
-  // Skip auth for health check
-  if (req.path === '/health') {
-    return next();
-  }
-
-  // Check if basic auth is enabled
-  const authUsername = process.env.BASIC_AUTH_USERNAME;
-  const authPassword = process.env.BASIC_AUTH_PASSWORD;
-  
-  if (!authUsername || !authPassword) {
-    console.log('Basic認証が無効です (環境変数が設定されていません)');
-    return next();
-  }
-
-  const credentials = basicAuth(req);
-  
-  if (!credentials || credentials.name !== authUsername || credentials.pass !== authPassword) {
-    res.set('WWW-Authenticate', 'Basic realm="FWJ Contest Progress"');
-    return res.status(401).json({ error: '認証が必要です' });
-  }
-  
-  console.log('✅ Basic認証成功:', credentials.name);
-  next();
-}
-
-app.use(basicAuthMiddleware);
 
 // Rate limiting with enhanced security for Vercel
 const limiter = rateLimit({
@@ -138,9 +42,6 @@ app.use(express.urlencoded({ extended: true }));
 // Static files
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Initialize database on startup
-initializeDatabase();
-
 // Configure multer for CSV file uploads
 const uploadCSV = multer({
   dest: '/tmp/',
@@ -153,58 +54,24 @@ const uploadCSV = multer({
   }
 });
 
-// Configure multer for media file uploads
-const uploadMedia = multer({
-  dest: '/tmp/',
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
-    files: 4 // Maximum 4 files
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept images and videos
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
-      // Check supported formats
-      const supportedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      const supportedVideoTypes = ['video/mp4', 'video/mov', 'video/avi'];
-      
-      if (supportedImageTypes.includes(file.mimetype) || supportedVideoTypes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error('サポートされていないファイル形式です'), false);
-      }
-    } else {
-      cb(new Error('画像または動画ファイルのみアップロード可能です'), false);
-    }
-  }
-});
-
-// ツイート用テキスト生成関数
-function generateTweetText(post) {
+// テキスト生成関数
+function generateText(post) {
   const { contestName, status, message } = post;
   
-  let tweetText = '';
+  let text = '';
   
-  // コンテスト情報を追加（絵文字なし）
-  tweetText += `${contestName}\n`;
+  // コンテスト情報を追加
+  text += `${contestName}\n`;
   
-  // 状況を追加（絵文字なし）
-  tweetText += `${status}`;
+  // 状況を追加
+  text += `${status}`;
   
   // メッセージを追加
   if (message && message.trim()) {
-    tweetText += `\n\n${message}`;
+    text += `\n\n${message}`;
   }
   
-  // 280文字制限を確認
-  if (tweetText.length > 280) {
-    // 長すぎる場合は短縮
-    const baseText = `${contestName}\n${status}\n\n`;
-    const availableLength = 280 - baseText.length - 3; // "..." 分を引く
-    const shortenedMessage = message.substring(0, availableLength);
-    tweetText = baseText + shortenedMessage + '...';
-  }
-  
-  return tweetText;
+  return text;
 }
 
 // Routes
@@ -216,47 +83,8 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    timestamp: new Date().toISOString(),
-    supabase: !!process.env.SUPABASE_URL,
-    twitter: !!process.env.TWITTER_API_KEY
+    timestamp: new Date().toISOString()
   });
-});
-
-app.get('/api/posts', async (req, res) => {
-  try {
-    const posts = await postsDB.getAll();
-    res.json(posts);
-  } catch (error) {
-    console.error('Posts取得エラー:', error);
-    res.status(500).json({ error: 'データベースエラーが発生しました' });
-  }
-});
-
-// Get latest post for initial form values
-app.get('/api/posts/latest', async (req, res) => {
-  try {
-    const posts = await postsDB.getAll();
-    if (posts.length === 0) {
-      return res.json({ 
-        hasData: false,
-        contestName: '',
-        status: ''
-      });
-    }
-    
-    // 最新の投稿を取得（created_atで降順ソート済み）
-    const latestPost = posts[0];
-    
-    res.json({
-      hasData: true,
-      contestName: latestPost.contest_name,
-      status: latestPost.status,
-      createdAt: latestPost.created_at
-    });
-  } catch (error) {
-    console.error('Latest post取得エラー:', error);
-    res.status(500).json({ error: 'データベースエラーが発生しました' });
-  }
 });
 
 // Get status options from CSV
@@ -424,259 +252,8 @@ app.post('/api/upload-csv', uploadCSV.single('csvFile'), async (req, res) => {
   }
 });
 
-// Upload media files
-app.post('/api/upload-media', uploadMedia.array('mediaFiles', 4), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'メディアファイルが選択されていません' });
-    }
-
-    const mediaFiles = req.files.map(file => ({
-      id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-      originalName: file.originalname,
-      filename: file.filename,
-      path: file.path,
-      mimetype: file.mimetype,
-      size: file.size
-    }));
-
-    res.json({
-      message: `${mediaFiles.length}個のメディアファイルをアップロードしました`,
-      mediaFiles: mediaFiles
-    });
-  } catch (error) {
-    console.error('メディアアップロードエラー:', error);
-    res.status(500).json({
-      error: 'メディアファイルのアップロードに失敗しました',
-      details: error.message
-    });
-  }
-});
-
-// Get uploaded media file
-app.get('/api/media/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const filePath = path.join('/tmp', filename);
-  
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).json({ error: 'ファイルが見つかりません' });
-  }
-});
-
-// Twitter API権限チェック機能
-app.get('/api/twitter/status', async (req, res) => {
-  // 環境変数の設定状況を確認
-  const envStatus = {
-    hasApiKey: !!process.env.TWITTER_API_KEY,
-    hasApiSecret: !!process.env.TWITTER_API_SECRET,
-    hasAccessToken: !!process.env.TWITTER_ACCESS_TOKEN,
-    hasAccessTokenSecret: !!process.env.TWITTER_ACCESS_TOKEN_SECRET,
-    hasBearerToken: !!process.env.TWITTER_BEARER_TOKEN,
-    testMode: process.env.TEST_MODE === 'true'
-  };
-
-  // 認証情報のマスキング表示
-  const maskedCredentials = {
-    apiKey: process.env.TWITTER_API_KEY ? 
-      process.env.TWITTER_API_KEY.substring(0, 4) + '...' + process.env.TWITTER_API_KEY.slice(-4) : 
-      'NOT_SET',
-    apiSecret: process.env.TWITTER_API_SECRET ? 
-      process.env.TWITTER_API_SECRET.substring(0, 4) + '...' + process.env.TWITTER_API_SECRET.slice(-4) : 
-      'NOT_SET',
-    accessToken: process.env.TWITTER_ACCESS_TOKEN ? 
-      process.env.TWITTER_ACCESS_TOKEN.substring(0, 4) + '...' + process.env.TWITTER_ACCESS_TOKEN.slice(-4) : 
-      'NOT_SET',
-    accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET ? 
-      process.env.TWITTER_ACCESS_TOKEN_SECRET.substring(0, 4) + '...' + process.env.TWITTER_ACCESS_TOKEN_SECRET.slice(-4) : 
-      'NOT_SET'
-  };
-
-  if (!twitterClient) {
-    return res.json({
-      connected: false,
-      error: 'Twitter API認証情報が設定されていません',
-      authMethod: null,
-      envStatus: envStatus,
-      credentials: maskedCredentials,
-      troubleshooting: [
-        '1. .env.example を .env にコピーしてください',
-        '2. Twitter Developer Portal で API キーを取得してください',
-        '3. 取得したキーを .env ファイルに設定してください',
-        '4. アプリの権限が "Read and Write" に設定されているか確認してください'
-      ]
-    });
-  }
-
-  // TEST_MODE=trueまたは接続確認済みの場合は設定状況を返す
-  if (process.env.TEST_MODE === 'true') {
-    res.json({
-      connected: !!twitterClient,
-      authMethod: authMethod,
-      user: {
-        id: 'test_mode',
-        name: 'Test Mode User',
-        username: 'test_user'
-      },
-      canTweet: authMethod === 'OAuth1',
-      envStatus: envStatus,
-      credentials: maskedCredentials,
-      note: 'テストモード: 実際のAPI接続確認はスキップされています',
-      testMode: true
-    });
-  } else if (connectionVerified && authenticatedUser) {
-    console.log('✅ Twitter API接続状態確認成功');
-    console.log('認証ユーザー詳細情報:', {
-      id: authenticatedUser.id,
-      name: authenticatedUser.name,
-      username: authenticatedUser.username,
-      verified: authenticatedUser.verified,
-      followersCount: authenticatedUser.followersCount,
-      friendsCount: authenticatedUser.friendsCount,
-      profileImageUrl: authenticatedUser.profileImageUrl
-    });
-    console.log('認証方式:', authMethod);
-    console.log('投稿権限:', authMethod === 'OAuth1' ? '✅ あり' : '❌ なし');
-    console.log('接続確認時刻:', new Date().toISOString());
-    
-    res.json({
-      connected: true,
-      authMethod: authMethod,
-      user: authenticatedUser,
-      canTweet: authMethod === 'OAuth1',
-      envStatus: envStatus,
-      credentials: maskedCredentials,
-      note: '本番モード: API接続確認済み',
-      connectionVerified: true
-    });
-  } else {
-    // 本番モードで接続テストがまだ実行されていない場合、リアルタイムでテストを実行
-    if (process.env.TEST_MODE !== 'true' && twitterClient && !connectionVerified) {
-      try {
-        console.log('🔄 リアルタイムTwitter API接続テストを実行中...');
-        const response = await twitterClient.v1.get('account/verify_credentials.json');
-        connectionVerified = true;
-        authenticatedUser = {
-          id: response.id_str,
-          username: response.screen_name,
-          name: response.name,
-          verified: response.verified,
-          profileImageUrl: response.profile_image_url_https,
-          followersCount: response.followers_count,
-          friendsCount: response.friends_count
-        };
-        
-        console.log('✅ リアルタイムTwitter API接続テスト成功:', authenticatedUser);
-        console.log('認証ユーザー詳細情報:', {
-          id: authenticatedUser.id,
-          name: authenticatedUser.name,
-          username: authenticatedUser.username,
-          verified: authenticatedUser.verified,
-          followersCount: authenticatedUser.followersCount,
-          friendsCount: authenticatedUser.friendsCount,
-          profileImageUrl: authenticatedUser.profileImageUrl
-        });
-        console.log('認証方式:', authMethod);
-        console.log('投稿権限:', authMethod === 'OAuth1' ? '✅ あり' : '❌ なし');
-        console.log('接続確認時刻:', new Date().toISOString());
-        
-        res.json({
-          connected: true,
-          authMethod: authMethod,
-          user: authenticatedUser,
-          canTweet: authMethod === 'OAuth1',
-          envStatus: envStatus,
-          credentials: maskedCredentials,
-          note: '本番モード: API接続確認済み（リアルタイムテスト）',
-          connectionVerified: true
-        });
-      } catch (error) {
-        console.error('❌ リアルタイムTwitter API接続テスト失敗:', error.message);
-        res.json({
-          connected: false,
-          authMethod: authMethod,
-          user: null,
-          canTweet: false,
-          envStatus: envStatus,
-          credentials: maskedCredentials,
-          note: '本番モード: API接続テスト失敗',
-          connectionVerified: false,
-          error: error.message
-        });
-      }
-    } else {
-      res.json({
-        connected: false,
-        authMethod: authMethod,
-        user: null,
-        canTweet: false,
-        envStatus: envStatus,
-        credentials: maskedCredentials,
-        note: '本番モード: API接続確認が必要です',
-        connectionVerified: false
-      });
-    }
-  }
-
-});
-
-// Twitter API基本接続テスト
-app.get('/api/twitter/test', async (req, res) => {
-  if (!twitterClient) {
-    return res.json({
-      success: false,
-      error: 'Twitter API認証情報が設定されていません'
-    });
-  }
-
-  try {
-    // 最も基本的なAPIエンドポイントをテスト
-    const response = await twitterClient.v1.get('account/verify_credentials.json');
-    
-    res.json({
-      success: true,
-      message: 'Twitter API接続成功',
-      user: {
-        id: response.id_str,
-        name: response.name,
-        screen_name: response.screen_name,
-        verified: response.verified
-      },
-      authMethod: authMethod
-    });
-  } catch (error) {
-    console.error('Twitter API接続テストエラー:', error);
-    
-    let errorDetails = {
-      success: false,
-      error: 'Twitter API接続テストに失敗しました',
-      errorCode: error.code,
-      authMethod: authMethod
-    };
-
-    if (error.code === 401) {
-      errorDetails.specificError = '認証情報が無効です';
-      errorDetails.possibleCauses = [
-        'API キーまたはシークレットが間違っています',
-        'アクセストークンまたはシークレットが間違っています',
-        'トークンの有効期限が切れています',
-        'アプリが停止されています'
-      ];
-    } else if (error.code === 403) {
-      errorDetails.specificError = 'アクセスが拒否されました';
-      errorDetails.possibleCauses = [
-        'アプリの権限が不足しています',
-        'アカウントが凍結されています',
-        'アプリが承認されていません'
-      ];
-    }
-
-    res.json(errorDetails);
-  }
-});
-
-app.post('/api/posts', async (req, res) => {
+// Generate text preview
+app.post('/api/generate-text', async (req, res) => {
   const { contestName, status, message } = req.body;
   
   if (!contestName || !status) {
@@ -684,320 +261,19 @@ app.post('/api/posts', async (req, res) => {
   }
 
   try {
-    const post = await postsDB.create({
+    const text = generateText({
       contestName,
       status,
       message: message || ''
     });
-    
-    res.json(post);
-  } catch (error) {
-    console.error('投稿作成エラー:', error);
-    res.status(500).json({ error: 'データベースエラーが発生しました' });
-  }
-});
 
-// Clear all posts
-app.delete('/api/posts/all', async (req, res) => {
-  try {
-    const result = await postsDB.deleteAll();
-    console.log('✅ すべての投稿履歴を削除しました');
-    res.json(result);
-  } catch (error) {
-    console.error('投稿履歴削除エラー:', error);
-    res.status(500).json({ error: 'データベースエラーが発生しました' });
-  }
-});
-
-// Delete individual post
-app.delete('/api/posts/:id', async (req, res) => {
-  const postId = req.params.id;
-  
-  try {
-    // 投稿が存在するかチェック
-    const post = await postsDB.findById(postId);
-    if (!post) {
-      return res.status(404).json({ error: '投稿が見つかりません' });
-    }
-    
-    // 投稿済みの場合は削除を拒否
-    if (post.posted) {
-      return res.status(400).json({ error: '投稿済みの投稿は削除できません' });
-    }
-    
-    const result = await postsDB.deleteById(postId);
-    console.log('✅ 投稿を削除しました:', { id: postId, contestName: post.contest_name, status: post.status });
-    res.json(result);
-  } catch (error) {
-    console.error('投稿削除エラー:', error);
-    res.status(500).json({ error: 'データベースエラーが発生しました' });
-  }
-});
-
-// ツイートテキストプレビュー機能
-app.get('/api/posts/:id/preview', async (req, res) => {
-  const postId = req.params.id;
-  
-  try {
-    const post = await postsDB.findById(postId);
-    
-    if (!post) {
-      return res.status(404).json({ error: '投稿が見つかりません' });
-    }
-
-    const tweetText = generateTweetText({
-      contestName: post.contest_name,
-      status: post.status,
-      message: post.message
-    });
-
-    // 同じコンテストの直前の投稿を検索（リプライ対象）
-    const previousPost = await postsDB.findLatestPostedByContest(post.contest_name, postId);
-    
     res.json({ 
-      tweetText,
-      charCount: tweetText.length,
-      withinLimit: tweetText.length <= 280,
-      replyTo: previousPost ? {
-        id: previousPost.id,
-        tweetId: previousPost.tweet_id,
-        contestName: previousPost.contest_name,
-        status: previousPost.status,
-        tweetText: previousPost.tweet_text,
-        tweetedAt: previousPost.tweeted_at
-      } : null
+      text,
+      charCount: text.length
     });
   } catch (error) {
-    console.error('プレビュー取得エラー:', error);
-    res.status(500).json({ error: 'データベースエラーが発生しました' });
-  }
-});
-
-// Twitter media upload helper function
-async function uploadMediaToTwitter(filePath, altText = '') {
-  try {
-    const mediaData = fs.readFileSync(filePath);
-    const mediaUpload = await twitterClient.v1.uploadMedia(mediaData, { mimeType: 'auto' });
-    
-    // Add alt text if provided
-    if (altText) {
-      await twitterClient.v1.createMediaMetadata(mediaUpload, { alt_text: { text: altText } });
-    }
-    
-    return mediaUpload;
-  } catch (error) {
-    console.error('Twitter media upload error:', error);
-    throw error;
-  }
-}
-
-app.post('/api/posts/:id/tweet', async (req, res) => {
-  const postId = req.params.id;
-  const { customText, mediaFiles } = req.body; // カスタムテキストとメディアファイルを受け取る
-  
-  try {
-    const post = await postsDB.findById(postId);
-    
-    if (!post) {
-      return res.status(404).json({ error: '投稿が見つかりません' });
-    }
-
-    if (post.posted) {
-      return res.status(400).json({ error: 'この投稿は既にツイートされています' });
-    }
-
-    // Twitter API接続の確認
-    if (!twitterClient) {
-      return res.status(500).json({ 
-        error: 'Twitter API認証情報が設定されていません。.envファイルを確認してください。' 
-      });
-    }
-
-    // カスタムテキストがある場合はそれを使用、なければデフォルトのテキストを生成
-    const tweetText = customText && customText.trim() ? customText.trim() : generateTweetText({
-      contestName: post.contest_name,
-      status: post.status,
-      message: post.message
-    });
-
-    // 同じコンテストの直前の投稿を検索（リプライ対象）
-    const previousPost = await postsDB.findLatestPostedByContest(post.contest_name, postId);
-    
-    // テストモードの確認
-    const testMode = process.env.TEST_MODE === 'true';
-    
-    if (testMode) {
-      // テストモード: 実際の投稿は行わない
-      const testTweetId = 'test-' + Date.now();
-      const updatedPost = await postsDB.updateTweetInfo(postId, testTweetId, tweetText);
-      
-      const replyInfo = previousPost ? ` (リプライ先: ${previousPost.tweet_id})` : ' (新規投稿)';
-      
-      res.json({ 
-        message: 'テストモード: 投稿をシミュレーションしました' + replyInfo, 
-        post: updatedPost, 
-        tweetUrl: `https://twitter.com/user/status/${testTweetId}`,
-        replyTo: previousPost ? {
-          id: previousPost.id,
-          tweetId: previousPost.tweet_id,
-          contestName: previousPost.contest_name
-        } : null
-      });
-      return;
-    }
-    
-    // メディアファイルをTwitterにアップロード
-    let mediaIds = [];
-    if (mediaFiles && mediaFiles.length > 0) {
-      for (const mediaFile of mediaFiles) {
-        try {
-          const mediaFilePath = path.join('/tmp', mediaFile.filename);
-          if (fs.existsSync(mediaFilePath)) {
-            const mediaId = await uploadMediaToTwitter(mediaFilePath);
-            mediaIds.push(mediaId);
-          }
-        } catch (error) {
-          console.error('メディアアップロードエラー:', error);
-          // メディアアップロードが失敗してもテキストは投稿する
-        }
-      }
-    }
-
-    // 実際にツイートを投稿
-    let tweetOptions = { text: tweetText };
-    
-    // メディアがある場合は追加
-    if (mediaIds.length > 0) {
-      tweetOptions.media = { media_ids: mediaIds };
-    }
-    
-    // リプライ先がある場合はリプライとして投稿（有効なTwitter IDの場合のみ）
-    if (previousPost && previousPost.tweet_id) {
-      // Twitter IDは1-19桁の数字である必要がある
-      const isValidTwitterId = /^[0-9]{1,19}$/.test(previousPost.tweet_id);
-      
-      if (isValidTwitterId) {
-        tweetOptions.reply = {
-          in_reply_to_tweet_id: previousPost.tweet_id
-        };
-        console.log('✅ リプライとして投稿します。リプライ先ID:', previousPost.tweet_id);
-      } else {
-        console.log('⚠️ 無効なTwitter ID（テストIDまたは削除済み）のため、通常の投稿として処理します。ID:', previousPost.tweet_id);
-      }
-    }
-    
-    const tweet = await twitterClient.v2.tweet(tweetOptions);
-    
-    // アップロードしたメディアファイルを削除
-    if (mediaFiles && mediaFiles.length > 0) {
-      mediaFiles.forEach(mediaFile => {
-        const mediaFilePath = path.join('/tmp', mediaFile.filename);
-        if (fs.existsSync(mediaFilePath)) {
-          fs.unlinkSync(mediaFilePath);
-        }
-      });
-    }
-    
-    // 投稿成功時の処理 - データベースを更新
-    const updatedPost = await postsDB.updateTweetInfo(postId, tweet.data.id, tweetText);
-    
-    // 実際にリプライとして投稿されたかどうかを判定
-    const wasPostedAsReply = previousPost && previousPost.tweet_id && /^[0-9]{1,19}$/.test(previousPost.tweet_id);
-    const replyInfo = wasPostedAsReply ? ' (リプライとして投稿)' : '';
-    
-    res.json({ 
-      message: 'Xに投稿しました！' + replyInfo, 
-      post: updatedPost, 
-      tweetUrl: `https://twitter.com/user/status/${tweet.data.id}`,
-      replyTo: wasPostedAsReply ? {
-        id: previousPost.id,
-        tweetId: previousPost.tweet_id,
-        contestName: previousPost.contest_name
-      } : null
-    });
-    
-  } catch (error) {
-    console.error('Twitter投稿エラー:', error);
-    
-    // エラーの詳細情報をログに出力
-    if (error.data) {
-      console.error('エラーの詳細:', JSON.stringify(error.data, null, 2));
-    }
-    
-    // エラーの種類に応じた詳細メッセージ
-    let errorMessage = 'Xへの投稿に失敗しました。';
-    let troubleshootingTips = [];
-    
-    if (error.code === 401) {
-      errorMessage = 'Twitter API認証に失敗しました。';
-      troubleshootingTips = [
-        '認証情報が正しく設定されているか確認してください',
-        'アクセストークンの有効期限が切れていないか確認してください'
-      ];
-    } else if (error.code === 403) {
-      errorMessage = 'Twitter APIの権限が不足しています。';
-      troubleshootingTips = [
-        'Twitter Developer Portal でアプリの権限を "Read and Write" に設定してください',
-        'アクセストークンを再生成してください',
-        'アプリの利用規約に同意しているか確認してください',
-        `現在の認証方式: ${authMethod}`
-      ];
-      
-      if (authMethod === 'OAuth2') {
-        troubleshootingTips.push('OAuth 2.0 Bearer Token では投稿できません。OAuth 1.0a の認証情報を使用してください');
-      }
-    } else if (error.code === 429) {
-      errorMessage = 'Twitter APIの利用制限に達しました。';
-      troubleshootingTips = [
-        'しばらく待ってから再度お試しください',
-        'API利用制限についてはTwitter Developer Portalで確認してください'
-      ];
-    } else if (error.code === 400) {
-      errorMessage = '投稿内容に問題があります。';
-      troubleshootingTips = [
-        '文字数制限（280文字）を超えていないか確認してください',
-        '重複した投稿でないか確認してください',
-        'Twitter の利用規約に違反していないか確認してください'
-      ];
-    }
-    
-    res.status(500).json({ 
-      error: errorMessage,
-      details: error.message,
-      troubleshooting: troubleshootingTips,
-      errorCode: error.code,
-      authMethod: authMethod
-    });
-  }
-});
-
-// Keepalive endpoint for Vercel Cron Jobs to prevent Supabase hibernation
-app.get('/keepalive', async (req, res) => {
-  try {
-    // Simple database ping to keep Supabase active
-    const { data, error } = await supabase
-      .from('posts')
-      .select('id')
-      .limit(1);
-    
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
-    
-    console.log('Keepalive ping successful:', new Date().toISOString());
-    res.json({ 
-      status: 'alive', 
-      timestamp: new Date().toISOString(),
-      message: 'Database keepalive ping successful' 
-    });
-  } catch (error) {
-    console.error('Keepalive ping failed:', error);
-    res.status(500).json({ 
-      status: 'error', 
-      timestamp: new Date().toISOString(),
-      message: 'Database keepalive ping failed',
-      error: error.message 
-    });
+    console.error('テキスト生成エラー:', error);
+    res.status(500).json({ error: 'テキスト生成に失敗しました' });
   }
 });
 

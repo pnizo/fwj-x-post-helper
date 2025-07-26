@@ -1,7 +1,7 @@
 {
   "name": "fwj-contest-tweeter",
   "version": "1.0.0",
-  "description": "FWJコンテスト進行状況投稿アプリ - Web app for posting FWJ contest progress to X (Twitter) with Supabase & Vercel",
+  "description": "FWJコンテスト進行状況テキスト生成アプリ - Web app for generating FWJ contest progress text with Supabase & Vercel",
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
@@ -10,15 +10,13 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "basic-auth": "^2.0.1",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
-    "multer": "^2.0.1",
-    "twitter-api-v2": "^1.15.1"
+    "multer": "^2.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
