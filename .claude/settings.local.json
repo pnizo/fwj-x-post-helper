@@ -14,7 +14,10 @@
       "Bash(curl:*)",
       "Bash(gh repo list:*)",
       "Bash(vercel:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "WebFetch(domain:vercel.com)",
+      "Bash(node:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
